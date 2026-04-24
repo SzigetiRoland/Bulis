@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kings Cup</title>
+  <style>
+    :root {
+      --text: #fff6e8;
+      --muted: #d4c1cc;
+      --line: rgba(255, 200, 120, 0.16);
+      --amber: #ffb347;
+      --amber-strong: #ff7b2f;
+      --pink: #ff4f9d;
+      --teal: #5cf2df;
+      --shadow: 0 28px 60px rgba(0, 0, 0, 0.4);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 16%, rgba(255, 79, 157, 0.18), transparent 22%),
+        radial-gradient(circle at 88% 8%, rgba(92, 242, 223, 0.14), transparent 18%),
+        linear-gradient(180deg, #160c1c 0%, #0e0a17 48%, #1a1020 100%);
+    }
+
+    .app-shell {
+      width: min(1120px, calc(100vw - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    .hero-card,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+      gap: 1rem;
+      align-items: center;
+      padding: 2rem;
+      background:
+        radial-gradient(circle at top right, rgba(92,242,223,0.18), transparent 30%),
+        linear-gradient(135deg, rgba(28,17,54,0.95), rgba(12,14,35,0.96));
+    }
+
+    .panel {
+      margin-top: 1.1rem;
+      padding: 1.5rem;
+      background:
+        linear-gradient(180deg, rgba(27,11,37,0.96), rgba(20,9,29,0.94)),
+        rgba(33,16,42,0.82);
+    }
+
+    .eyebrow,
+    .mini-label {
+      margin: 0 0 0.75rem;
+      color: var(--teal);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+    }
+
+    .mini-label {
+      margin-bottom: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    h1, h2, h3, .card-rank, .card-suit, .rule-chip strong, .card-letter {
+      margin: 0;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      letter-spacing: 0.04em;
+    }
+
+    h1 {
+      font-size: clamp(3.4rem, 9vw, 6rem);
+      line-height: 0.9;
+      color: #ffd68d;
+    }
+
+    .lead,
+    .helper {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hero-illustration {
+      justify-self: end;
+      width: min(100%, 340px);
+    }
+
+    .bar-scene {
+      width: 100%;
+      height: auto;
+    }
+
+    .neon-halo {
+      fill: rgba(255, 79, 157, 0.14);
+      stroke: rgba(255, 79, 157, 0.7);
+      stroke-width: 3;
+    }
+
+    .card-stack {
+      fill: rgba(255, 255, 255, 0.16);
+      stroke: rgba(255, 255, 255, 0.16);
+      stroke-width: 2;
+    }
+
+    .card-top {
+      fill: #fff8ef;
+      stroke: rgba(255, 179, 71, 0.25);
+      stroke-width: 2;
+    }
+
+    .card-letter {
+      font-size: 58px;
+      text-anchor: middle;
+      fill: #d63b3b;
+    }
+
+    .cup-body {
+      fill: rgba(255, 179, 71, 0.28);
+      stroke: rgba(255, 229, 154, 0.75);
+      stroke-width: 3;
+    }
+
+    .cup-shine {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.46);
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+
+    .section-topbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .kings-layout,
+    .kings-rules {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .kings-layout {
+      grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr);
+      align-items: stretch;
+    }
+
+    .kings-rules {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-top: 1rem;
+      gap: 0.8rem;
+    }
+
+    .game-card,
+    .rule-chip {
+      padding: 1.15rem;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255, 179, 71, 0.12);
+    }
+
+    .playing-card {
+      width: min(220px, 100%);
+      aspect-ratio: 5 / 7;
+      display: grid;
+      place-items: center;
+      position: relative;
+      margin-bottom: 1rem;
+      border-radius: 24px;
+      border: 2px solid rgba(255, 179, 71, 0.18);
+      background: linear-gradient(180deg, rgba(255,248,239,0.98), rgba(247,234,217,0.96));
+      box-shadow: 0 24px 38px rgba(0, 0, 0, 0.22);
+      color: #1f1f22;
+    }
+
+    .playing-card.placeholder {
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
+      color: rgba(255,246,232,0.88);
+    }
+
+    .playing-card::after {
+      content: attr(data-center);
+      font-size: clamp(4rem, 9vw, 6rem);
+      color: currentColor;
+      opacity: 0.9;
+    }
+
+    .red { color: #d63b3b; }
+    .black { color: #1f1f22; }
+
+    .card-rank,
+    .card-suit {
+      position: absolute;
+      left: 18px;
+      line-height: 1;
+    }
+
+    .card-rank {
+      top: 12px;
+      font-size: 3.2rem;
+    }
+
+    .card-suit {
+      top: 58px;
+      font-size: 2.1rem;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .pill {
+      padding: 0.55rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,179,71,0.12);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .rule-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.8rem 0.9rem;
+    }
+
+    .rule-chip strong {
+      min-width: 2rem;
+      font-size: 1.8rem;
+      color: #ffd68d;
+    }
+
+    button,
+    .back-link {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.95rem 1.35rem;
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    button { cursor: pointer; }
+
+    .primary {
+      background: linear-gradient(135deg, var(--amber), var(--amber-strong));
+      color: #2b1307;
+    }
+
+    .secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+
+    .accent {
+      background: linear-gradient(135deg, var(--pink), #ff965a);
+      color: #fff8f5;
+    }
+
+    @media (max-width: 900px) {
+      .hero-card,
+      .kings-layout,
+      .kings-rules {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-illustration {
+        justify-self: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">Kártyahúzós ivás</p>
+        <h1>KINGS CUP</h1>
+        <p class="lead">Húzz egy lapot, olvasd fel a szabályt, és jöhet a következő játékos. A negyedik király lezárja a kupát.</p>
+      </div>
+      <div class="hero-illustration" aria-hidden="true">
+        <svg viewBox="0 0 320 260" class="bar-scene">
+          <circle cx="230" cy="58" r="40" class="neon-halo"/>
+          <rect x="72" y="80" width="88" height="122" rx="12" class="card-stack"/>
+          <rect x="94" y="62" width="88" height="122" rx="12" class="card-top"/>
+          <text x="138" y="118" class="card-letter">A</text>
+          <rect x="184" y="96" width="60" height="92" rx="16" class="cup-body"/>
+          <path d="M184 116 Q214 136 244 116" class="cup-shine"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-topbar">
+        <a class="back-link secondary" href="femrud.html">Főmenü</a>
+        <button id="resetKingsBtn" class="secondary" type="button">Új pakli</button>
+      </div>
+
+      <div class="kings-layout">
+        <article class="game-card">
+          <span class="mini-label">Pakli állapot</span>
+          <h2 id="kingsRemainingText">52 lap maradt</h2>
+          <p id="kingsKingText" class="lead">Királyok húzva: 0 / 4</p>
+          <button id="drawCardBtn" class="primary" type="button">Lap húzása</button>
+          <div class="pill-row">
+            <span class="pill" id="kingsStatus">Várjuk az első húzást</span>
+          </div>
+        </article>
+
+        <article class="game-card">
+          <span class="mini-label">Aktuális lap</span>
+          <div id="drawnCardVisual" class="playing-card placeholder" data-center="?">
+            <span class="card-rank">?</span>
+            <span class="card-suit">♠</span>
+          </div>
+          <h3 id="drawnCardTitle">Még nincs húzott lap</h3>
+          <p id="drawnCardRule" class="helper">Nyomd meg a lap húzása gombot, és a rendszer kioszt egy véletlen szabályt a pakliból.</p>
+        </article>
+      </div>
+
+      <div class="kings-rules">
+        <article class="rule-chip"><strong>A</strong><span>Vízesés</span></article>
+        <article class="rule-chip"><strong>2</strong><span>Te iszol</span></article>
+        <article class="rule-chip"><strong>3</strong><span>Én iszom</span></article>
+        <article class="rule-chip"><strong>4</strong><span>Padló</span></article>
+        <article class="rule-chip"><strong>5</strong><span>Fiúk</span></article>
+        <article class="rule-chip"><strong>6</strong><span>Lányok</span></article>
+        <article class="rule-chip"><strong>7</strong><span>Mennyország</span></article>
+        <article class="rule-chip"><strong>8</strong><span>Haver</span></article>
+        <article class="rule-chip"><strong>9</strong><span>Rímelés</span></article>
+        <article class="rule-chip"><strong>10</strong><span>Kategória</span></article>
+        <article class="rule-chip"><strong>J</strong><span>Szabály</span></article>
+        <article class="rule-chip"><strong>Q</strong><span>Kérdésmester</span></article>
+        <article class="rule-chip"><strong>K</strong><span>Király kupa</span></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const drawCardBtn = document.getElementById("drawCardBtn");
+    const resetKingsBtn = document.getElementById("resetKingsBtn");
+    const kingsRemainingText = document.getElementById("kingsRemainingText");
+    const kingsKingText = document.getElementById("kingsKingText");
+    const kingsStatus = document.getElementById("kingsStatus");
+    const drawnCardVisual = document.getElementById("drawnCardVisual");
+    const drawnCardTitle = document.getElementById("drawnCardTitle");
+    const drawnCardRule = document.getElementById("drawnCardRule");
+
+    const suits = [
+      { symbol: "♠", color: "black" },
+      { symbol: "♥", color: "red" },
+      { symbol: "♦", color: "red" },
+      { symbol: "♣", color: "black" }
+    ];
+
+    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+    const kingsRules = {
+      A: { title: "Vízesés", text: "Mindenki egyszerre kezd inni, és csak akkor állhatsz le, ha az előtted ülő már letette az italát." },
+      2: { title: "Te iszol", text: "Válassz valakit, aki iszik két kortyot vagy egy felest." },
+      3: { title: "Én iszom", text: "A lap húzója iszik." },
+      4: { title: "Padló", text: "Az utolsó, aki megérinti a padlót, iszik." },
+      5: { title: "Fiúk", text: "Minden fiú iszik." },
+      6: { title: "Lányok", text: "Minden lány iszik." },
+      7: { title: "Mennyország", text: "Az utolsó, aki a kezét a levegőbe emeli, iszik." },
+      8: { title: "Haver", text: "Válassz ivópajtást. Amíg új havert nem húznak, együtt isztok." },
+      9: { title: "Rímelés", text: "Mondj egy szót, és körben mindenki mondjon rá rímelő szót. Aki hibázik, iszik." },
+      10: { title: "Kategória", text: "Mondj egy kategóriát, és körben soroljatok elemeket. Aki megakad, iszik." },
+      J: { title: "Szabály", text: "Találj ki egy új szabályt, ami a játék végéig él." },
+      Q: { title: "Kérdésmester", text: "Te leszel a kérdésmester. Aki válaszol egy kérdésedre, iszik." },
+      K: { title: "Király kupa", text: "Önts a közös kupába. A negyedik király húzója megissza az egészet." }
+    };
+
+    let kingsDeck = [];
+    let kingsCount = 0;
+
+    function shuffleDeck(deck) {
+      const result = deck.slice();
+      for (let i = result.length - 1; i > 0; i -= 1) {
+        const swapIndex = Math.floor(Math.random() * (i + 1));
+        const temp = result[i];
+        result[i] = result[swapIndex];
+        result[swapIndex] = temp;
+      }
+      return result;
+    }
+
+    function createKingsDeck() {
+      const deck = [];
+      ranks.forEach((rank) => {
+        suits.forEach((suit) => {
+          deck.push({ rank: rank, suit: suit.symbol, color: suit.color });
+        });
+      });
+      return shuffleDeck(deck);
+    }
+
+    function updateKingsStatus() {
+      kingsRemainingText.textContent = kingsDeck.length + " lap maradt";
+      kingsKingText.textContent = "Királyok húzva: " + kingsCount + " / 4";
+      drawCardBtn.disabled = kingsDeck.length === 0;
+    }
+
+    function setCardVisual(card) {
+      drawnCardVisual.className = "playing-card " + card.color;
+      drawnCardVisual.dataset.center = card.rank + card.suit;
+      drawnCardVisual.querySelector(".card-rank").textContent = card.rank;
+      drawnCardVisual.querySelector(".card-suit").textContent = card.suit;
+    }
+
+    function setPlaceholderCard() {
+      drawnCardVisual.className = "playing-card placeholder";
+      drawnCardVisual.dataset.center = "?";
+      drawnCardVisual.querySelector(".card-rank").textContent = "?";
+      drawnCardVisual.querySelector(".card-suit").textContent = "♠";
+    }
+
+    function resetKingsGame() {
+      kingsDeck = createKingsDeck();
+      kingsCount = 0;
+      setPlaceholderCard();
+      drawnCardTitle.textContent = "Még nincs húzott lap";
+      drawnCardRule.textContent = "Nyomd meg a lap húzása gombot, és a rendszer kioszt egy véletlen szabályt a pakliból.";
+      kingsStatus.textContent = "Várjuk az első húzást";
+      updateKingsStatus();
+    }
+
+    function drawKingsCard() {
+      if (kingsDeck.length === 0) {
+        drawnCardTitle.textContent = "Elfogyott a pakli";
+        drawnCardRule.textContent = "Indíts új paklit, ha menne még egy kör.";
+        kingsStatus.textContent = "Pakli vége";
+        drawCardBtn.disabled = true;
+        return;
+      }
+
+      const card = kingsDeck.pop();
+      const rule = kingsRules[card.rank];
+      if (card.rank === "K") {
+        kingsCount += 1;
+      }
+
+      setCardVisual(card);
+      drawnCardTitle.textContent = card.rank + card.suit + " • " + rule.title;
+      drawnCardRule.textContent = card.rank === "K" && kingsCount === 4
+        ? "Ez a negyedik király. A királykupát most meg kell inni."
+        : rule.text;
+      kingsStatus.textContent = "Aktív szabály: " + rule.title;
+      updateKingsStatus();
+    }
+
+    drawCardBtn.addEventListener("click", drawKingsCard);
+    resetKingsBtn.addEventListener("click", resetKingsGame);
+    resetKingsGame();
+  </script>
+</body>
+</html>

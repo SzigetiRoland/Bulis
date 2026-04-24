@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buszozás</title>
+  <style>
+    :root {
+      --text: #fff6e8;
+      --muted: #d4c1cc;
+      --line: rgba(255, 200, 120, 0.16);
+      --amber: #ffb347;
+      --amber-strong: #ff7b2f;
+      --pink: #ff4f9d;
+      --teal: #5cf2df;
+      --good: #67e39d;
+      --shadow: 0 28px 60px rgba(0, 0, 0, 0.4);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 16%, rgba(255, 79, 157, 0.18), transparent 22%),
+        radial-gradient(circle at 88% 8%, rgba(92, 242, 223, 0.14), transparent 18%),
+        linear-gradient(180deg, #160c1c 0%, #0e0a17 48%, #1a1020 100%);
+    }
+
+    .app-shell {
+      width: min(1040px, calc(100vw - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    .hero-card,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+      gap: 1rem;
+      align-items: center;
+      padding: 2rem;
+      background:
+        radial-gradient(circle at top right, rgba(92,242,223,0.18), transparent 30%),
+        linear-gradient(135deg, rgba(18,30,52,0.96), rgba(12,13,28,0.96));
+    }
+
+    .panel {
+      margin-top: 1.1rem;
+      padding: 1.5rem;
+      background:
+        linear-gradient(180deg, rgba(27,11,37,0.96), rgba(20,9,29,0.94)),
+        rgba(33,16,42,0.82);
+    }
+
+    .eyebrow,
+    .mini-label {
+      margin: 0 0 0.75rem;
+      color: var(--teal);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+    }
+
+    .mini-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+
+    h1, h2, h3, .card-rank, .card-suit {
+      margin: 0;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      letter-spacing: 0.04em;
+    }
+
+    h1 {
+      font-size: clamp(3.4rem, 9vw, 6rem);
+      line-height: 0.9;
+      color: #ffd68d;
+    }
+
+    .lead,
+    .helper,
+    .note {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hero-illustration {
+      justify-self: end;
+      width: min(100%, 340px);
+    }
+
+    .bar-scene {
+      width: 100%;
+      height: auto;
+    }
+
+    .neon-halo {
+      fill: rgba(255, 79, 157, 0.14);
+      stroke: rgba(255, 79, 157, 0.7);
+      stroke-width: 3;
+    }
+
+    .bus-body {
+      fill: #ffd267;
+      stroke: #2d1a08;
+      stroke-width: 3;
+    }
+
+    .bus-window {
+      fill: rgba(92, 242, 223, 0.35);
+    }
+
+    .section-topbar,
+    .choices,
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+    }
+
+    .section-topbar {
+      margin-bottom: 1rem;
+    }
+
+    .info-card,
+    .stage-card,
+    .summary-card,
+    .hand-card {
+      padding: 1.15rem;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255, 179, 71, 0.12);
+    }
+
+    .stage-card,
+    .summary-card,
+    .hand-card {
+      margin-top: 1rem;
+    }
+
+    .single-card-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .card-pair {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .card-slot {
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 240px;
+    }
+
+    .playing-card,
+    .mini-card,
+    .hand-mini-card {
+      position: relative;
+      border-radius: 22px;
+      border: 2px solid rgba(255, 179, 71, 0.18);
+      background: linear-gradient(180deg, rgba(255,248,239,0.98), rgba(247,234,217,0.96));
+      color: #1f1f22;
+      box-shadow: 0 18px 30px rgba(0,0,0,0.22);
+    }
+
+    .playing-card {
+      width: min(200px, 100%);
+      aspect-ratio: 5 / 7;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 1rem;
+    }
+
+    .playing-card.placeholder {
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
+      color: rgba(255,246,232,0.88);
+    }
+
+    .playing-card::after,
+    .mini-card::after,
+    .hand-mini-card::after {
+      content: attr(data-center);
+      opacity: 0.9;
+    }
+
+    .playing-card::after {
+      font-size: clamp(3.2rem, 7vw, 5.1rem);
+    }
+
+    .mini-card,
+    .hand-mini-card {
+      width: 72px;
+      height: 100px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .mini-card {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,246,232,0.92);
+    }
+
+    .mini-card.revealed,
+    .hand-mini-card {
+      background: linear-gradient(180deg, rgba(255,248,239,0.98), rgba(247,234,217,0.96));
+      color: #1f1f22;
+    }
+
+    .hand-mini-card {
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .hand-mini-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .hand-mini-card.playable {
+      border-color: rgba(103, 227, 157, 0.95);
+      box-shadow: 0 0 0 3px rgba(103, 227, 157, 0.18), 0 18px 30px rgba(0,0,0,0.22);
+    }
+
+    .red { color: #d63b3b; }
+    .black { color: #1f1f22; }
+
+    .card-rank,
+    .card-suit {
+      position: absolute;
+      left: 16px;
+      line-height: 1;
+    }
+
+    .card-rank {
+      top: 12px;
+      font-size: 3rem;
+    }
+
+    .card-suit {
+      top: 54px;
+      font-size: 2rem;
+    }
+
+    .choices {
+      margin-top: 1rem;
+    }
+
+    .choices.grid-2 > *,
+    .choices.grid-3 > *,
+    .choices.grid-4 > * {
+      flex: 1 1 0;
+    }
+
+    .exact-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 0.85rem;
+      margin-top: 1rem;
+      align-items: end;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      padding: 0.35rem 0.4rem 0.35rem 0.8rem;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 179, 71, 0.16);
+      background: rgba(255,255,255,0.06);
+    }
+
+    select {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+
+    select option {
+      color: #111;
+    }
+
+    .pyramid-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    .pyramid-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .pyramid-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .slot-badges {
+      min-height: 2.2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.2rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .slot-stack-count {
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,179,71,0.14);
+    }
+
+    .slot-color-label {
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.7rem;
+    }
+
+    .slot-color-label.red {
+      color: #ff9e9e;
+    }
+
+    .slot-color-label.black {
+      color: #d7d7df;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .pill {
+      padding: 0.55rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,179,71,0.12);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .highlight {
+      margin-top: 1rem;
+      padding: 1rem 1.1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(103, 227, 157, 0.4);
+      background: linear-gradient(135deg, rgba(103,227,157,0.12), rgba(255,179,71,0.08));
+      color: #effff5;
+      font-weight: 700;
+    }
+
+    button,
+    .back-link {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.95rem 1.35rem;
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--amber), var(--amber-strong));
+      color: #2b1307;
+    }
+
+    .secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+
+    .accent {
+      background: linear-gradient(135deg, var(--pink), #ff965a);
+      color: #fff8f5;
+    }
+
+    .good {
+      background: linear-gradient(135deg, #62d88f, #2eb973);
+      color: #102117;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(8, 7, 13, 0.72);
+      z-index: 50;
+    }
+
+    .modal-backdrop.visible {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(480px, 100%);
+      padding: 1.4rem;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 179, 71, 0.18);
+      background:
+        linear-gradient(180deg, rgba(27,11,37,0.98), rgba(20,9,29,0.98)),
+        rgba(33,16,42,0.9);
+      box-shadow: var(--shadow);
+    }
+
+    @media (max-width: 900px) {
+      .hero-card {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-illustration {
+        justify-self: center;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .exact-row {
+        grid-template-columns: 1fr;
+      }
+
+      .choices > * {
+        flex-basis: 100%;
+      }
+
+      .section-topbar,
+      .card-pair {
+        flex-direction: column;
+      }
+
+      .card-slot {
+        max-width: none;
+      }
+
+      button,
+      .back-link {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">Piros, fekete, piramis, busz</p>
+        <h1>BUSZOZÁS</h1>
+        <p class="lead">A képernyőn mindig csak az aktuális feladat látszik, a piramisnál pedig a kézben tartott lapokat is követheted.</p>
+      </div>
+      <div class="hero-illustration" aria-hidden="true">
+        <svg viewBox="0 0 320 260" class="bar-scene">
+          <circle cx="230" cy="58" r="40" class="neon-halo"/>
+          <rect x="74" y="84" width="180" height="72" rx="16" class="bus-body"/>
+          <rect x="92" y="100" width="28" height="22" rx="5" class="bus-window"/>
+          <rect x="126" y="100" width="28" height="22" rx="5" class="bus-window"/>
+          <rect x="160" y="100" width="28" height="22" rx="5" class="bus-window"/>
+          <rect x="194" y="100" width="38" height="22" rx="5" class="bus-window"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-topbar">
+        <a class="back-link secondary" href="femrud.html">Főmenü</a>
+        <button id="resetBusBtn" class="secondary" type="button">Új Buszozás</button>
+      </div>
+
+      <article class="info-card">
+        <span class="mini-label">Aktuális állapot</span>
+        <h2 id="busStageTitle">1. rész - 4+1 kérdés</h2>
+        <p id="busPrompt" class="helper">Tippelj az első lap színére: piros vagy fekete?</p>
+
+        <div id="singleCardWrap" class="single-card-wrap">
+          <div id="busCard" class="playing-card placeholder" data-center="?">
+            <span class="card-rank">?</span>
+            <span class="card-suit">♠</span>
+          </div>
+        </div>
+
+        <div id="ridePairWrap" class="card-pair hidden">
+          <div class="card-slot">
+            <div class="mini-label">Előző lap</div>
+            <div id="ridePreviousCard" class="playing-card placeholder" data-center="?">
+              <span class="card-rank">?</span>
+              <span class="card-suit">♠</span>
+            </div>
+          </div>
+          <div class="card-slot">
+            <div class="mini-label">Mostani lap</div>
+            <div id="rideCurrentCard" class="playing-card placeholder" data-center="?">
+              <span class="card-rank">?</span>
+              <span class="card-suit">♠</span>
+            </div>
+          </div>
+        </div>
+
+        <h3 id="busResultTitle">Még nincs húzás</h3>
+        <p id="busResultText" class="helper">Az aktuális feladat alatt jelennek meg a megfelelő gombok.</p>
+
+        <div class="pill-row">
+          <span class="pill" id="busDeckCount">Pakli: 52 lap</span>
+          <span class="pill" id="questionProgress">Kérdés: 1 / 5</span>
+          <span class="pill" id="busStatus">Várjuk az első tippet</span>
+        </div>
+      </article>
+
+      <article id="questionsStep" class="stage-card">
+        <span class="mini-label">1. rész - 4+1 kérdés</span>
+        <div id="standardChoices" class="choices grid-2"></div>
+        <div id="exactChoices" class="exact-row hidden">
+          <div class="input-row">
+            <select id="exactRank">
+              <option>A</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+              <option>7</option><option>8</option><option>9</option><option>10</option><option>J</option><option>Q</option><option>K</option>
+            </select>
+          </div>
+          <div class="input-row">
+            <select id="exactSuit">
+              <option value="♥">Kőr</option>
+              <option value="♦">Káró</option>
+              <option value="♠">Pikk</option>
+              <option value="♣">Treff</option>
+            </select>
+          </div>
+          <button id="submitExactBtn" class="accent" type="button">Tipp leadása</button>
+        </div>
+      </article>
+
+      <article id="handStep" class="hand-card">
+        <span class="mini-label">Kézben tartott lapok</span>
+        <p class="helper">A kérdéskör során kapott lapok itt maradnak. Ha a piramisban egyező érték jön, a megfelelő lapokra rá tudsz kattintani.</p>
+        <div class="pill-row">
+          <span class="pill" id="handCountPill">Kézben: 0 lap</span>
+        </div>
+        <div id="handCards" class="pyramid-row"></div>
+      </article>
+
+      <article id="pyramidStep" class="stage-card hidden">
+        <span class="mini-label">2. rész - Piramis</span>
+        <p id="pyramidInfo" class="helper">A kérdések után itt soronként fordítjuk fel a piramist.</p>
+        <button id="revealPyramidBtn" class="primary" type="button">Következő piramislap</button>
+        <div id="playableNotice" class="highlight hidden"></div>
+        <div id="pyramidRows" class="pyramid-grid"></div>
+      </article>
+
+      <article id="rideStep" class="stage-card hidden">
+        <span class="mini-label">3. rész - Buszozás</span>
+        <p id="rideInfo" class="helper">Az első lap automatikusan fel van fordítva, ez a 0. kör.</p>
+        <div id="rideGuessControls">
+          <div class="choices grid-3">
+            <button class="primary ride-guess-btn" data-guess="higher" type="button">Nagyobb</button>
+            <button class="secondary ride-guess-btn" data-guess="same" type="button">Ugyanaz</button>
+            <button class="accent ride-guess-btn" data-guess="lower" type="button">Kisebb</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="summary-card">
+        <span class="mini-label">Busz összesítő</span>
+        <div class="pill-row">
+          <span class="pill" id="rideRoundPill">Kör: 0</span>
+          <span class="pill" id="rideStreakPill">Jó sorozat: 0 / 5</span>
+          <span class="pill" id="ridePenaltyPill">Aktuális büntetés: 0 korty</span>
+          <span class="pill" id="rideTotalPill">Összes korty: 0</span>
+        </div>
+        <p class="note">Ha az `ugyanaz` tipp hibás, mindig 5 korty jár. Más hibánál az aktuális kör száma a büntetés, legfeljebb 5 korty. Minden hiba után a körszám és a sorozat is újraindul.</p>
+      </article>
+    </section>
+  </main>
+
+  <div id="statusModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card">
+      <span class="mini-label">Játéküzenet</span>
+      <h3 id="modalTitle">Üzenet</h3>
+      <p id="modalText" class="helper">Szöveg</p>
+      <button id="modalConfirmBtn" class="primary" type="button">Rendben</button>
+    </div>
+  </div>
+
+  <script>
+    const busStageTitle = document.getElementById("busStageTitle");
+    const busPrompt = document.getElementById("busPrompt");
+    const busDeckCount = document.getElementById("busDeckCount");
+    const questionProgress = document.getElementById("questionProgress");
+    const busStatus = document.getElementById("busStatus");
+    const busCard = document.getElementById("busCard");
+    const busResultTitle = document.getElementById("busResultTitle");
+    const busResultText = document.getElementById("busResultText");
+    const singleCardWrap = document.getElementById("singleCardWrap");
+    const ridePairWrap = document.getElementById("ridePairWrap");
+    const ridePreviousCardEl = document.getElementById("ridePreviousCard");
+    const rideCurrentCardEl = document.getElementById("rideCurrentCard");
+
+    const questionsStep = document.getElementById("questionsStep");
+    const standardChoices = document.getElementById("standardChoices");
+    const exactChoices = document.getElementById("exactChoices");
+    const exactRank = document.getElementById("exactRank");
+    const exactSuit = document.getElementById("exactSuit");
+    const submitExactBtn = document.getElementById("submitExactBtn");
+
+    const handStep = document.getElementById("handStep");
+    const handCountPill = document.getElementById("handCountPill");
+    const handCards = document.getElementById("handCards");
+
+    const pyramidStep = document.getElementById("pyramidStep");
+    const revealPyramidBtn = document.getElementById("revealPyramidBtn");
+    const pyramidInfo = document.getElementById("pyramidInfo");
+    const pyramidRows = document.getElementById("pyramidRows");
+    const playableNotice = document.getElementById("playableNotice");
+
+    const rideStep = document.getElementById("rideStep");
+    const rideInfo = document.getElementById("rideInfo");
+    const rideGuessControls = document.getElementById("rideGuessControls");
+    const rideRoundPill = document.getElementById("rideRoundPill");
+    const rideStreakPill = document.getElementById("rideStreakPill");
+    const ridePenaltyPill = document.getElementById("ridePenaltyPill");
+    const rideTotalPill = document.getElementById("rideTotalPill");
+    const resetBusBtn = document.getElementById("resetBusBtn");
+
+    const statusModal = document.getElementById("statusModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalText = document.getElementById("modalText");
+    const modalConfirmBtn = document.getElementById("modalConfirmBtn");
+
+    const suits = [
+      { symbol: "♠", color: "black", name: "Pikk" },
+      { symbol: "♥", color: "red", name: "Kőr" },
+      { symbol: "♦", color: "red", name: "Káró" },
+      { symbol: "♣", color: "black", name: "Treff" }
+    ];
+
+    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+    let busDeck = [];
+    let hand = [];
+    let questionStep = 0;
+    let pyramidDeck = [];
+    let pyramidRevealIndex = 0;
+    let lastPyramidCard = null;
+    let ridePreviousCard = null;
+    let rideCurrentCard = null;
+    let rideLastGuess = null;
+    let rideRound = 0;
+    let rideStreak = 0;
+    let rideTotalSips = 0;
+    let modalOnClose = null;
+
+    function shuffle(deck) {
+      const result = deck.slice();
+      for (let i = result.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = result[i];
+        result[i] = result[j];
+        result[j] = temp;
+      }
+      return result;
+    }
+
+    function createDeck() {
+      const deck = [];
+      ranks.forEach((rank) => {
+        suits.forEach((suit) => {
+          deck.push({
+            id: rank + suit.symbol + "-" + Math.random().toString(36).slice(2, 8),
+            rank: rank,
+            suit: suit.symbol,
+            color: suit.color,
+            value: rank === "A" ? 14 : rank === "K" ? 13 : rank === "Q" ? 12 : rank === "J" ? 11 : Number(rank)
+          });
+        });
+      });
+      return shuffle(deck);
+    }
+
+    function drawCardFromBusDeck() {
+      if (busDeck.length === 0) {
+        busDeck = createDeck();
+      }
+      return busDeck.pop();
+    }
+
+    function ensureDeckHasCards(requiredCount) {
+      if (busDeck.length >= requiredCount) {
+        return;
+      }
+
+      const freshDeck = createDeck();
+      const need = requiredCount - busDeck.length;
+      const addWholeDeck = window.confirm(
+        "Nincs elég lap a folytatáshoz. Szeretnél bekeverni egy teljes új paklit?\n\nOK = teljes új pakli\nMégse = csak a hiányzó lapok random feltöltése"
+      );
+
+      if (addWholeDeck) {
+        busDeck = shuffle(busDeck.concat(freshDeck));
+      } else {
+        busDeck = shuffle(busDeck.concat(freshDeck.slice(0, need)));
+      }
+    }
+
+    function showModal(title, text, buttonLabel, onClose) {
+      modalTitle.textContent = title;
+      modalText.textContent = text;
+      modalConfirmBtn.textContent = buttonLabel;
+      modalOnClose = onClose || null;
+      statusModal.classList.add("visible");
+      statusModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal() {
+      statusModal.classList.remove("visible");
+      statusModal.setAttribute("aria-hidden", "true");
+      const callback = modalOnClose;
+      modalOnClose = null;
+      if (callback) {
+        callback();
+      }
+    }
+
+    function fillCardElement(element, card) {
+      if (!card) {
+        element.className = "playing-card placeholder";
+        element.dataset.center = "?";
+        element.querySelector(".card-rank").textContent = "?";
+        element.querySelector(".card-suit").textContent = "♠";
+        return;
+      }
+
+      element.className = "playing-card " + card.color;
+      element.dataset.center = card.rank + card.suit;
+      element.querySelector(".card-rank").textContent = card.rank;
+      element.querySelector(".card-suit").textContent = card.suit;
+    }
+
+    function renderMainCard(card) {
+      singleCardWrap.classList.remove("hidden");
+      ridePairWrap.classList.add("hidden");
+      fillCardElement(busCard, card);
+    }
+
+    function renderRideCards() {
+      singleCardWrap.classList.add("hidden");
+      ridePairWrap.classList.remove("hidden");
+      fillCardElement(ridePreviousCardEl, ridePreviousCard);
+      fillCardElement(rideCurrentCardEl, rideCurrentCard);
+    }
+
+    function updateBusMeta() {
+      busDeckCount.textContent = "Pakli: " + busDeck.length + " lap";
+      if (questionStep < 5) {
+        questionProgress.textContent = "Kérdés: " + (questionStep + 1) + " / 5";
+      } else if (pyramidRevealIndex < 15) {
+        questionProgress.textContent = "Piramis: " + pyramidRevealIndex + " / 15";
+      } else {
+        questionProgress.textContent = "Busz aktív";
+      }
+    }
+
+    function updateRidePills(lastPenalty) {
+      rideRoundPill.textContent = "Kör: " + rideRound;
+      rideStreakPill.textContent = "Jó sorozat: " + rideStreak + " / 5";
+      ridePenaltyPill.textContent = "Aktuális büntetés: " + lastPenalty + " korty";
+      rideTotalPill.textContent = "Összes korty: " + rideTotalSips;
+    }
+
+    function showOnlyStage(stageName) {
+      questionsStep.classList.toggle("hidden", stageName !== "questions");
+      pyramidStep.classList.toggle("hidden", stageName !== "pyramid");
+      handStep.classList.toggle("hidden", !(stageName === "questions" || stageName === "pyramid"));
+      rideStep.classList.toggle("hidden", stageName !== "ride");
+    }
+
+    function renderHand() {
+      handCards.innerHTML = "";
+      handCountPill.textContent = "Kézben: " + hand.length + " lap";
+
+      if (hand.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "helper";
+        empty.textContent = "Jelenleg nincs lap a kézben.";
+        handCards.appendChild(empty);
+        return;
+      }
+
+      hand.forEach((card) => {
+        const playable = lastPyramidCard && card.rank === lastPyramidCard.rank;
+        const cardEl = document.createElement("div");
+        cardEl.className = "hand-mini-card " + card.color + (playable ? " playable" : "");
+        cardEl.dataset.center = card.rank + card.suit;
+        cardEl.title = playable ? "Ezt most ráteheted a piramisra" : "Ez most nem tehető rá";
+        cardEl.addEventListener("click", () => {
+          if (playable) {
+            playHandCard(card.id);
+          }
+        });
+        handCards.appendChild(cardEl);
+      });
+    }
+
+    function updatePlayableNotice() {
+      const playableCards = hand.filter((card) => lastPyramidCard && card.rank === lastPyramidCard.rank);
+      if (playableCards.length === 0) {
+        playableNotice.classList.add("hidden");
+        playableNotice.textContent = "";
+        return;
+      }
+
+      playableNotice.classList.remove("hidden");
+      playableNotice.textContent = "Van " + playableCards.length + " olyan lap a kezedben, amit most rátehetsz a piramisra. A megfelelő lapok zölden ki vannak emelve, és kattintással automatikusan rátehetők.";
+    }
+
+    function bindQuestionButtons() {
+      standardChoices.querySelectorAll(".guess-btn").forEach((button) => {
+        button.onclick = () => resolveQuestion(button.dataset.guess);
+      });
+    }
+
+    function getQuestionPrompt(step) {
+      if (step === 0) return "Tippelj az első lap színére: piros vagy fekete?";
+      if (step === 1) return "Tippelj: a következő lap nagyobb vagy kisebb lesz az elsőnél?";
+      if (step === 2) return "Tippelj: a harmadik lap közte lesz az első kettőnek, vagy kint?";
+      if (step === 3) return "Tippelj a színre: kőr, káró, pikk vagy treff.";
+      return "Tippeld meg a pontos lapot: érték + szín.";
+    }
+
+    function configureQuestionUi() {
+      showOnlyStage("questions");
+      busStageTitle.textContent = "1. rész - 4+1 kérdés";
+      busPrompt.textContent = getQuestionPrompt(questionStep);
+      standardChoices.className = "choices grid-2";
+      exactChoices.classList.add("hidden");
+
+      if (questionStep === 0) {
+        standardChoices.innerHTML = '<button class="primary guess-btn" data-guess="red" type="button">Piros</button><button class="secondary guess-btn" data-guess="black" type="button">Fekete</button>';
+      } else if (questionStep === 1) {
+        standardChoices.innerHTML = '<button class="primary guess-btn" data-guess="higher" type="button">Nagyobb</button><button class="secondary guess-btn" data-guess="lower" type="button">Kisebb</button>';
+      } else if (questionStep === 2) {
+        standardChoices.innerHTML = '<button class="primary guess-btn" data-guess="inside" type="button">Közte</button><button class="secondary guess-btn" data-guess="outside" type="button">Kint</button>';
+      } else if (questionStep === 3) {
+        standardChoices.className = "choices grid-4";
+        standardChoices.innerHTML = '<button class="accent guess-btn" data-guess="♥" type="button">♥</button><button class="accent guess-btn" data-guess="♦" type="button">♦</button><button class="secondary guess-btn" data-guess="♠" type="button">♠</button><button class="secondary guess-btn" data-guess="♣" type="button">♣</button>';
+      } else {
+        standardChoices.innerHTML = "";
+        exactChoices.classList.remove("hidden");
+      }
+
+      if (questionStep < 4) {
+        bindQuestionButtons();
+      }
+
+      if (hand.length === 0) {
+        renderMainCard(null);
+      }
+
+      renderHand();
+      updateBusMeta();
+    }
+
+    function resolveQuestion(guess) {
+      let card = drawCardFromBusDeck();
+
+      if (questionStep === 1) {
+        const first = hand[0];
+        while (card.value === first.value) {
+          busDeck.unshift(card);
+          busDeck = shuffle(busDeck);
+          card = drawCardFromBusDeck();
+        }
+      }
+
+      hand.push(card);
+      renderMainCard(card);
+      renderHand();
+
+      let correct = false;
+      let resultText = "";
+
+      if (questionStep === 0) {
+        correct = guess === card.color;
+        resultText = correct ? "Eltaláltad, megúsztad." : "Nem találtad el, iszol.";
+      } else if (questionStep === 1) {
+        const first = hand[0];
+        correct = (guess === "higher" && card.value > first.value) || (guess === "lower" && card.value < first.value);
+        resultText = correct ? "Jó tipp volt." : "Rossz tipp, jön az ivás.";
+      } else if (questionStep === 2) {
+        const a = hand[0].value;
+        const b = hand[1].value;
+        const low = Math.min(a, b);
+        const high = Math.max(a, b);
+        const inside = a !== b && card.value > low && card.value < high;
+        correct = guess === (inside ? "inside" : "outside");
+        resultText = correct ? "Bent volt a jó válasz." : "Ez most nem jött be, iszol.";
+      } else if (questionStep === 3) {
+        correct = guess === card.suit;
+        resultText = correct ? "Eltaláltad a színt. Ossz ki 4 kortyot." : "Nem találtad el, igyál egy kortyot.";
+      } else {
+        correct = guess.rank === card.rank && guess.suit === card.suit;
+        resultText = correct ? "Telitalálat. Ossz ki 5 kortyot." : "Nem lett pontos. Igyál 5 kortyot.";
+      }
+
+      busResultTitle.textContent = card.rank + card.suit;
+      busResultText.textContent = resultText;
+      busStatus.textContent = correct ? "Sikeres tipp" : "Rossz tipp";
+      questionStep += 1;
+
+      if (questionStep >= 5) {
+        startPyramidStage();
+      } else {
+        configureQuestionUi();
+      }
+    }
+
+    function setupPyramid() {
+      ensureDeckHasCards(15);
+      pyramidDeck = [];
+      for (let i = 0; i < 15; i += 1) {
+        pyramidDeck.push({
+          card: drawCardFromBusDeck(),
+          placedCount: 0
+        });
+      }
+      pyramidRevealIndex = 0;
+      lastPyramidCard = null;
+      renderPyramid();
+      renderHand();
+      updatePlayableNotice();
+    }
+
+    function renderPyramid() {
+      pyramidRows.innerHTML = "";
+      let start = 0;
+
+      for (let row = 5; row >= 1; row -= 1) {
+        const rowIndex = 6 - row;
+        const label = document.createElement("div");
+        label.className = "mini-label";
+        label.textContent = "Sor " + rowIndex + " • " + rowIndex + " korty";
+
+        const rowWrap = document.createElement("div");
+        rowWrap.className = "pyramid-row";
+
+        for (let i = 0; i < row; i += 1) {
+          const index = start + i;
+          const slot = pyramidDeck[index];
+          const slotWrap = document.createElement("div");
+          slotWrap.className = "pyramid-slot";
+
+          const badges = document.createElement("div");
+          badges.className = "slot-badges";
+
+          const cardEl = document.createElement("div");
+          if (index < pyramidRevealIndex) {
+            cardEl.className = "mini-card revealed " + slot.card.color;
+            cardEl.dataset.center = slot.card.rank + slot.card.suit;
+
+            const colorLabel = document.createElement("div");
+            colorLabel.className = "slot-color-label " + slot.card.color;
+            colorLabel.textContent = slot.card.color === "red" ? "Piros" : "Fekete";
+            badges.appendChild(colorLabel);
+
+            if (slot.placedCount > 0) {
+              const count = document.createElement("div");
+              count.className = "slot-stack-count";
+              count.textContent = "+" + slot.placedCount;
+              badges.appendChild(count);
+            }
+          } else {
+            cardEl.className = "mini-card";
+            cardEl.dataset.center = "?";
+          }
+
+          slotWrap.appendChild(badges);
+          slotWrap.appendChild(cardEl);
+          rowWrap.appendChild(slotWrap);
+        }
+
+        const section = document.createElement("div");
+        section.className = "pyramid-grid";
+        section.appendChild(label);
+        section.appendChild(rowWrap);
+        pyramidRows.appendChild(section);
+        start += row;
+      }
+    }
+
+    function startPyramidStage() {
+      showOnlyStage("pyramid");
+      busStageTitle.textContent = "2. rész - Piramis";
+      busPrompt.textContent = "Most már csak a piramis következik. Fordítsátok fel sorban a lapokat.";
+      pyramidInfo.textContent = "Nyomd meg a gombot, és soronként felfordítjuk a piramist.";
+      renderMainCard(null);
+
+      if (pyramidDeck.length === 0) {
+        setupPyramid();
+      }
+
+      updateBusMeta();
+    }
+
+    function playHandCard(cardId) {
+      if (!lastPyramidCard) {
+        return;
+      }
+
+      const cardIndex = hand.findIndex((card) => card.id === cardId);
+      if (cardIndex === -1) {
+        return;
+      }
+
+      const card = hand[cardIndex];
+      if (card.rank !== lastPyramidCard.rank) {
+        return;
+      }
+
+      const slotIndex = pyramidRevealIndex - 1;
+      if (slotIndex < 0) {
+        return;
+      }
+
+      pyramidDeck[slotIndex].placedCount += 1;
+      hand.splice(cardIndex, 1);
+      pyramidInfo.textContent = "Rátetted a(z) " + card.rank + card.suit + " lapot a " + lastPyramidCard.rank + lastPyramidCard.suit + " piramislapra. Egy lappal kevesebb van a kezedben.";
+      busStatus.textContent = "Lap kijátszva";
+      renderPyramid();
+      renderHand();
+      updatePlayableNotice();
+    }
+
+    function revealPyramidCard() {
+      if (pyramidRevealIndex >= pyramidDeck.length) {
+        startRideStage();
+        return;
+      }
+
+      const slot = pyramidDeck[pyramidRevealIndex];
+      const card = slot.card;
+      pyramidRevealIndex += 1;
+      lastPyramidCard = card;
+
+      renderPyramid();
+      renderHand();
+      updatePlayableNotice();
+      renderMainCard(card);
+
+      let rowNumber = 1;
+      if (pyramidRevealIndex > 5) rowNumber = 2;
+      if (pyramidRevealIndex > 9) rowNumber = 3;
+      if (pyramidRevealIndex > 12) rowNumber = 4;
+      if (pyramidRevealIndex > 14) rowNumber = 5;
+
+      busResultTitle.textContent = "Piramislap: " + card.rank + card.suit;
+      busResultText.textContent = "Ehhez a sorhoz " + rowNumber + " korty tartozik.";
+      pyramidInfo.textContent = "Felfordítva: " + card.rank + card.suit + ". A sor értéke: " + rowNumber + " korty.";
+
+      if (pyramidRevealIndex >= pyramidDeck.length) {
+        revealPyramidBtn.textContent = "Tovább a buszra";
+        pyramidInfo.textContent += " A piramis véget ért. A következő gombnyomás a buszozást indítja.";
+      }
+
+      updateBusMeta();
+    }
+
+    function startRideStage() {
+      showOnlyStage("ride");
+      busStageTitle.textContent = "3. rész - Buszozás";
+      busPrompt.textContent = "Az első lap már fel van fordítva, ez a 0. kör. Tippelj a következő lapra.";
+
+      ridePreviousCard = null;
+      rideCurrentCard = drawCardFromBusDeck();
+      rideLastGuess = null;
+      rideRound = 0;
+      rideStreak = 0;
+
+      renderRideCards();
+      busResultTitle.textContent = "0. kör lapja: " + rideCurrentCard.rank + rideCurrentCard.suit;
+      busResultText.textContent = "Ehhez képest kell eldönteni, hogy a következő lap kisebb, nagyobb vagy ugyanaz lesz-e.";
+      busStatus.textContent = "Busz indul";
+      rideInfo.textContent = "Az első lap az alaplap. Most jön az 1. kör.";
+      rideGuessControls.classList.remove("hidden");
+      updateRidePills(0);
+      updateBusMeta();
+    }
+
+    function evaluateRideGuess(previousCard, currentCard, guess) {
+      if (guess === "higher") return currentCard.value > previousCard.value;
+      if (guess === "lower") return currentCard.value < previousCard.value;
+      return currentCard.value === previousCard.value;
+    }
+
+    function handleRideGuess(guess) {
+      const previous = rideCurrentCard;
+      const next = drawCardFromBusDeck();
+      const currentRound = rideRound + 1;
+      const success = evaluateRideGuess(previous, next, guess);
+
+      rideLastGuess = guess;
+      ridePreviousCard = previous;
+      rideCurrentCard = next;
+      renderRideCards();
+
+      busResultTitle.textContent = currentRound + ". kör: " + previous.rank + previous.suit + " → " + next.rank + next.suit;
+
+      if (success) {
+        rideRound = currentRound;
+        rideStreak += 1;
+        busResultText.textContent = "Sikerült a tipp. A sorozat most " + rideStreak + " / 5.";
+        busStatus.textContent = "Sikeres kör";
+        rideInfo.textContent = "A rendszer szerint helyes volt a tipp. Jöhet a következő kör.";
+        updateRidePills(0);
+
+        if (rideStreak >= 5) {
+          rideGuessControls.classList.add("hidden");
+          busPrompt.textContent = "Megvan az 5 helyes tipp egymás után.";
+          busResultText.textContent = "A játékos 5 egymást követő alkalommal jól tippelt, ezzel megnyerte a buszozást.";
+          rideInfo.textContent = "A buszozás véget ért, sikerült az 5-ös sorozat.";
+          busStatus.textContent = "Nyert";
+          showModal(
+            "Gratulálunk, öcsipók!",
+            "Sikerült megnyerni a buszozást. Mire nyertél, összesen " + rideTotalSips + " kortyot kellett innod.",
+            "Szép volt"
+          );
+        } else {
+          busPrompt.textContent = "Tippelj újra: a következő lap kisebb, nagyobb vagy ugyanaz lesz?";
+        }
+      } else {
+        const penalty = guess === "same" ? 5 : Math.min(currentRound, 5);
+        rideTotalSips += penalty;
+        rideRound = 0;
+        rideStreak = 0;
+        busResultText.textContent = "Nem sikerült a tipp. " + penalty + " korty jár.";
+        busStatus.textContent = "Hibás kör";
+        rideInfo.textContent = "A találat hibás volt, ezért a következő tipp újra az 1. körként számít.";
+        rideGuessControls.classList.add("hidden");
+        updateRidePills(penalty);
+        showModal(
+          "Igyál " + penalty + " kortyot",
+          "Ez a kör elment. Itt most " + penalty + " korty jár, utána újraindul a körszámolás.",
+          "Megittam",
+          () => {
+            rideGuessControls.classList.remove("hidden");
+            busPrompt.textContent = "Tippelj újra: a következő lap kisebb, nagyobb vagy ugyanaz lesz?";
+          }
+        );
+      }
+
+      updateBusMeta();
+    }
+
+    function resetBusGame() {
+      busDeck = createDeck();
+      hand = [];
+      questionStep = 0;
+      pyramidDeck = [];
+      pyramidRevealIndex = 0;
+      lastPyramidCard = null;
+      ridePreviousCard = null;
+      rideCurrentCard = null;
+      rideLastGuess = null;
+      rideRound = 0;
+      rideStreak = 0;
+      rideTotalSips = 0;
+
+      renderMainCard(null);
+      fillCardElement(ridePreviousCardEl, null);
+      fillCardElement(rideCurrentCardEl, null);
+      busResultTitle.textContent = "Még nincs húzás";
+      busResultText.textContent = "Az aktuális feladat alatt jelennek meg a megfelelő gombok.";
+      busStatus.textContent = "Várjuk az első tippet";
+      pyramidRows.innerHTML = "";
+      handCards.innerHTML = "";
+      revealPyramidBtn.textContent = "Következő piramislap";
+      playableNotice.classList.add("hidden");
+      playableNotice.textContent = "";
+      rideGuessControls.classList.remove("hidden");
+      updateRidePills(0);
+      renderHand();
+      configureQuestionUi();
+    }
+
+    submitExactBtn.addEventListener("click", () => {
+      resolveQuestion({ rank: exactRank.value, suit: exactSuit.value });
+    });
+
+    revealPyramidBtn.addEventListener("click", revealPyramidCard);
+
+    document.querySelectorAll(".ride-guess-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        handleRideGuess(button.dataset.guess);
+      });
+    });
+
+    modalConfirmBtn.addEventListener("click", closeModal);
+    resetBusBtn.addEventListener("click", resetBusGame);
+
+    resetBusGame();
+  </script>
+</body>
+</html>

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feleses</title>
+  <style>
+    :root {
+      --text: #fff6e8;
+      --muted: #d4c1cc;
+      --line: rgba(255, 200, 120, 0.16);
+      --amber: #ffb347;
+      --amber-strong: #ff7b2f;
+      --pink: #ff4f9d;
+      --teal: #5cf2df;
+      --shadow: 0 28px 60px rgba(0, 0, 0, 0.4);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 16%, rgba(255, 79, 157, 0.18), transparent 22%),
+        radial-gradient(circle at 88% 8%, rgba(92, 242, 223, 0.14), transparent 18%),
+        linear-gradient(180deg, #160c1c 0%, #0e0a17 48%, #1a1020 100%);
+    }
+
+    .app-shell {
+      width: min(1120px, calc(100vw - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    .hero-card,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+      gap: 1rem;
+      align-items: center;
+      padding: 2rem;
+      background:
+        radial-gradient(circle at top right, rgba(255,179,71,0.16), transparent 30%),
+        linear-gradient(135deg, rgba(44,17,54,0.95), rgba(20,10,31,0.96));
+    }
+
+    .panel {
+      margin-top: 1.1rem;
+      padding: 1.5rem;
+      background:
+        linear-gradient(180deg, rgba(27,11,37,0.96), rgba(20,9,29,0.94)),
+        rgba(33,16,42,0.82);
+    }
+
+    .eyebrow {
+      margin: 0 0 0.75rem;
+      color: var(--teal);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: clamp(3.4rem, 9vw, 6rem);
+      line-height: 0.9;
+      color: #ffd68d;
+    }
+
+    .lead,
+    .hint {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hero-illustration {
+      justify-self: end;
+      width: min(100%, 340px);
+    }
+
+    .bar-scene {
+      width: 100%;
+      height: auto;
+    }
+
+    .neon-halo {
+      fill: rgba(255, 79, 157, 0.14);
+      stroke: rgba(255, 79, 157, 0.7);
+      stroke-width: 3;
+    }
+
+    .bar-top { fill: #50301f; }
+    .bar-front { fill: #2b1714; }
+    .bottle {
+      fill: rgba(19, 44, 53, 0.72);
+      stroke: rgba(92, 242, 223, 0.42);
+      stroke-width: 2;
+    }
+    .bottle-neck { fill: #1d5660; }
+    .shot {
+      fill: rgba(255,255,255,0.08);
+      stroke: rgba(255,229,154,0.6);
+      stroke-width: 2;
+    }
+
+    .section-topbar,
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+    }
+
+    .section-topbar {
+      margin-bottom: 1rem;
+    }
+
+    .button-row {
+      margin: 1.35rem 0;
+    }
+
+    .field-grid,
+    .status-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .field-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .status-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .field span,
+    .status-label {
+      color: var(--muted);
+    }
+
+    .time-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      padding: 0.35rem 0.4rem 0.35rem 0.8rem;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 179, 71, 0.16);
+      background: rgba(255,255,255,0.06);
+    }
+
+    input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+
+    .suffix {
+      color: var(--amber);
+      font-weight: 700;
+    }
+
+    button,
+    .back-link {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.95rem 1.35rem;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--amber), var(--amber-strong));
+      color: #2b1307;
+    }
+
+    .secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+
+    .accent {
+      background: linear-gradient(135deg, var(--pink), #ff965a);
+      color: #fff8f5;
+    }
+
+    .status-card {
+      padding: 1rem;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255, 179, 71, 0.12);
+    }
+
+    .status-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    #shotCountText {
+      color: #ffd68d;
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+    }
+
+    .toast-banner {
+      margin-top: 1rem;
+      padding: 1rem 1.2rem;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 79, 157, 0.22);
+      background: linear-gradient(135deg, rgba(255,79,157,0.14), rgba(255,179,71,0.12));
+      color: #ffe9c7;
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast-banner.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 900px) {
+      .hero-card,
+      .field-grid,
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-illustration {
+        justify-self: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">Csörömpölésre feles</p>
+        <h1>FELESES</h1>
+        <p class="lead">Véletlen időközönként megszólal a fémrúd, ti pedig toljátok a következő kört.</p>
+      </div>
+      <div class="hero-illustration" aria-hidden="true">
+        <svg viewBox="0 0 320 260" class="bar-scene">
+          <circle cx="234" cy="70" r="42" class="neon-halo"/>
+          <rect x="0" y="210" width="320" height="18" rx="9" class="bar-top"/>
+          <rect x="0" y="228" width="320" height="32" class="bar-front"/>
+          <rect x="56" y="54" width="42" height="112" rx="12" class="bottle"/>
+          <rect x="68" y="36" width="18" height="30" rx="7" class="bottle-neck"/>
+          <rect x="142" y="112" width="42" height="66" rx="10" class="shot"/>
+          <rect x="194" y="100" width="42" height="78" rx="10" class="shot"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-topbar">
+        <a class="back-link secondary" href="femrud.html">Főmenü</a>
+      </div>
+
+      <div class="field-grid">
+        <label class="field">
+          <span>Teljes futási idő</span>
+          <div class="time-row">
+            <div class="input-row"><input id="durationMinutes" type="number" min="0" value="60"><span class="suffix">perc</span></div>
+            <div class="input-row"><input id="durationSeconds" type="number" min="0" max="59" value="0"><span class="suffix">mp</span></div>
+          </div>
+        </label>
+
+        <label class="field">
+          <span>Minimum szünet</span>
+          <div class="time-row">
+            <div class="input-row"><input id="minIntervalMinutes" type="number" min="0" max="20" value="1"><span class="suffix">perc</span></div>
+            <div class="input-row"><input id="minIntervalSeconds" type="number" min="0" max="59" value="0"><span class="suffix">mp</span></div>
+          </div>
+        </label>
+
+        <label class="field">
+          <span>Maximum szünet</span>
+          <div class="time-row">
+            <div class="input-row"><input id="maxIntervalMinutes" type="number" min="0" max="20" value="20"><span class="suffix">perc</span></div>
+            <div class="input-row"><input id="maxIntervalSeconds" type="number" min="0" max="59" value="0"><span class="suffix">mp</span></div>
+          </div>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="startBtn" class="primary" type="button">Indítás</button>
+        <button id="stopBtn" class="secondary" type="button" disabled>Leállítás</button>
+        <button id="playNowBtn" class="accent" type="button" disabled>Csörömpölés most</button>
+      </div>
+
+      <div class="status-grid">
+        <article class="status-card"><span class="status-label">Mai körök</span><strong id="shotCountText">0</strong></article>
+        <article class="status-card"><span class="status-label">Állapot</span><strong id="statusText">Leállítva</strong></article>
+        <article class="status-card"><span class="status-label">Hátralévő idő</span><strong id="remainingText">00:00:00</strong></article>
+        <article class="status-card"><span class="status-label">Következő fémrúd</span><strong id="nextPlayText">-</strong></article>
+      </div>
+
+      <div id="toastBanner" class="toast-banner" aria-live="polite">Töltsd a következőt, megszólalt a fémrúd!</div>
+      <p class="hint">A játék most külön oldalon fut, a főmenüből bármikor vissza tudsz menni.</p>
+    </section>
+  </main>
+
+  <script>
+    const durationInput = document.getElementById("durationMinutes");
+    const durationSecondsInput = document.getElementById("durationSeconds");
+    const minIntervalMinutesInput = document.getElementById("minIntervalMinutes");
+    const minIntervalSecondsInput = document.getElementById("minIntervalSeconds");
+    const maxIntervalMinutesInput = document.getElementById("maxIntervalMinutes");
+    const maxIntervalSecondsInput = document.getElementById("maxIntervalSeconds");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const playNowBtn = document.getElementById("playNowBtn");
+    const statusText = document.getElementById("statusText");
+    const remainingText = document.getElementById("remainingText");
+    const nextPlayText = document.getElementById("nextPlayText");
+    const shotCountText = document.getElementById("shotCountText");
+    const toastBanner = document.getElementById("toastBanner");
+
+    let audioContext;
+    let masterGain;
+    let isRunning = false;
+    let sessionEndAt = 0;
+    let nextPlayAt = 0;
+    let nextPlayTimeoutId = null;
+    let displayIntervalId = null;
+    let toastTimeoutId = null;
+    let shotCount = 0;
+
+    function ensureAudioContext() {
+      const ContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!ContextClass) throw new Error("A böngésző nem támogatja a Web Audio API-t.");
+      if (!audioContext) {
+        audioContext = new ContextClass();
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = 0.72;
+        masterGain.connect(audioContext.destination);
+      }
+      return audioContext.state === "suspended" ? audioContext.resume() : Promise.resolve();
+    }
+
+    function clampInt(value, fallback, min, max) {
+      if (!Number.isFinite(value)) return fallback;
+      return Math.min(max, Math.max(min, Math.round(value)));
+    }
+
+    function readTimeParts(minutesInput, secondsInput, fallbackMinutes, fallbackSeconds, maxMinutes) {
+      const minutes = clampInt(Number(minutesInput.value), fallbackMinutes, 0, maxMinutes);
+      const seconds = clampInt(Number(secondsInput.value), fallbackSeconds, 0, 59);
+      minutesInput.value = String(minutes);
+      secondsInput.value = String(seconds);
+      return (minutes * 60 + seconds) * 1000;
+    }
+
+    function writeDelay(delayMs, minutesInput, secondsInput) {
+      const totalSeconds = Math.floor(delayMs / 1000);
+      minutesInput.value = String(Math.floor(totalSeconds / 60));
+      secondsInput.value = String(totalSeconds % 60);
+    }
+
+    function readConfig() {
+      let durationMs = readTimeParts(durationInput, durationSecondsInput, 60, 0, 9999);
+      let minDelayMs = readTimeParts(minIntervalMinutesInput, minIntervalSecondsInput, 1, 0, 20);
+      let maxDelayMs = readTimeParts(maxIntervalMinutesInput, maxIntervalSecondsInput, 20, 0, 20);
+
+      if (durationMs < 1000) {
+        durationMs = 1000;
+        durationInput.value = "0";
+        durationSecondsInput.value = "1";
+      }
+      if (minDelayMs < 1000) {
+        minDelayMs = 1000;
+        writeDelay(minDelayMs, minIntervalMinutesInput, minIntervalSecondsInput);
+      }
+      if (maxDelayMs < 1000) {
+        maxDelayMs = 1000;
+        writeDelay(maxDelayMs, maxIntervalMinutesInput, maxIntervalSecondsInput);
+      }
+      if (minDelayMs > maxDelayMs) {
+        const temp = minDelayMs;
+        minDelayMs = maxDelayMs;
+        maxDelayMs = temp;
+        writeDelay(minDelayMs, minIntervalMinutesInput, minIntervalSecondsInput);
+        writeDelay(maxDelayMs, maxIntervalMinutesInput, maxIntervalSecondsInput);
+      }
+
+      return { durationMs, minDelayMs, maxDelayMs };
+    }
+
+    function formatDuration(ms) {
+      const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
+    }
+
+    function randomBetween(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function clearTimers() {
+      if (nextPlayTimeoutId) clearTimeout(nextPlayTimeoutId);
+      if (displayIntervalId) clearInterval(displayIntervalId);
+      if (toastTimeoutId) clearTimeout(toastTimeoutId);
+      nextPlayTimeoutId = null;
+      displayIntervalId = null;
+      toastTimeoutId = null;
+    }
+
+    function setRunningUi(running) {
+      startBtn.disabled = running;
+      stopBtn.disabled = !running;
+      playNowBtn.disabled = !running;
+      durationInput.disabled = running;
+      durationSecondsInput.disabled = running;
+      minIntervalMinutesInput.disabled = running;
+      minIntervalSecondsInput.disabled = running;
+      maxIntervalMinutesInput.disabled = running;
+      maxIntervalSecondsInput.disabled = running;
+    }
+
+    function updateStatusDisplay() {
+      if (!isRunning) {
+        remainingText.textContent = "00:00:00";
+        nextPlayText.textContent = "-";
+        return;
+      }
+      const now = Date.now();
+      const remaining = sessionEndAt - now;
+      remainingText.textContent = formatDuration(remaining);
+      nextPlayText.textContent = nextPlayAt > now ? formatDuration(nextPlayAt - now) : "hamarosan";
+      if (remaining <= 0) stopSession("Lejárt");
+    }
+
+    function setToast(message) {
+      toastBanner.textContent = message;
+      toastBanner.classList.add("visible");
+      if (toastTimeoutId) clearTimeout(toastTimeoutId);
+      toastTimeoutId = window.setTimeout(() => {
+        toastBanner.classList.remove("visible");
+      }, 2200);
+    }
+
+    function updateShotCount() {
+      shotCount += 1;
+      shotCountText.textContent = String(shotCount);
+      setToast("Csörömpölés! Jöhet a(z) " + shotCount + ". feles.");
+    }
+
+    function buildMetalHit(now) {
+      const partials = [
+        { frequency: 310, gain: 0.32, decay: 1.6, type: "triangle" },
+        { frequency: 468, gain: 0.22, decay: 1.35, type: "triangle" },
+        { frequency: 731, gain: 0.18, decay: 1.1, type: "sine" },
+        { frequency: 1117, gain: 0.1, decay: 0.85, type: "sine" }
+      ];
+
+      partials.forEach((partial, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        const filter = audioContext.createBiquadFilter();
+        oscillator.type = partial.type;
+        oscillator.frequency.setValueAtTime(partial.frequency, now);
+        oscillator.frequency.exponentialRampToValueAtTime(partial.frequency * (1 + 0.015 * (index + 1)), now + 0.035);
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(partial.frequency * 1.4, now);
+        filter.Q.value = 3;
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(partial.gain, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + partial.decay);
+        oscillator.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(masterGain);
+        oscillator.start(now);
+        oscillator.stop(now + partial.decay + 0.08);
+      });
+    }
+
+    async function playMetalSound() {
+      await ensureAudioContext();
+      buildMetalHit(audioContext.currentTime + 0.02);
+      updateShotCount();
+    }
+
+    function stopSession(reason = "Leállítva") {
+      isRunning = false;
+      clearTimers();
+      setRunningUi(false);
+      statusText.textContent = reason;
+      updateStatusDisplay();
+    }
+
+    function scheduleNextPlay() {
+      if (!isRunning) return;
+      const config = readConfig();
+      const now = Date.now();
+      const remainingMs = sessionEndAt - now;
+      if (remainingMs <= 0) {
+        stopSession("Lejárt");
+        return;
+      }
+      const actualDelay = Math.min(randomBetween(config.minDelayMs, config.maxDelayMs), remainingMs);
+      nextPlayAt = now + actualDelay;
+      updateStatusDisplay();
+      nextPlayTimeoutId = window.setTimeout(async () => {
+        if (!isRunning) return;
+        await playMetalSound();
+        if (Date.now() >= sessionEndAt) {
+          stopSession("Lejárt");
+          return;
+        }
+        scheduleNextPlay();
+      }, actualDelay);
+    }
+
+    async function startSession() {
+      const config = readConfig();
+      await ensureAudioContext();
+      clearTimers();
+      isRunning = true;
+      sessionEndAt = Date.now() + config.durationMs;
+      statusText.textContent = "Fut";
+      setRunningUi(true);
+      setToast("A riasztó élesítve. Várjuk az első csörömpölést.");
+      scheduleNextPlay();
+      updateStatusDisplay();
+      displayIntervalId = window.setInterval(updateStatusDisplay, 250);
+    }
+
+    async function playNowAndReschedule() {
+      if (!isRunning) return;
+      clearTimeout(nextPlayTimeoutId);
+      nextPlayTimeoutId = null;
+      await playMetalSound();
+      if (Date.now() >= sessionEndAt) {
+        stopSession("Lejárt");
+        return;
+      }
+      scheduleNextPlay();
+    }
+
+    startBtn.addEventListener("click", async () => {
+      try {
+        await startSession();
+      } catch (error) {
+        statusText.textContent = "Hiba";
+        alert(error.message);
+      }
+    });
+
+    stopBtn.addEventListener("click", () => stopSession("Leállítva"));
+    playNowBtn.addEventListener("click", async () => {
+      try {
+        await playNowAndReschedule();
+      } catch (error) {
+        statusText.textContent = "Hiba";
+        alert(error.message);
+      }
+    });
+
+    setRunningUi(false);
+    updateStatusDisplay();
+  </script>
+</body>
+</html>

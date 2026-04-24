@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ivós játékok</title>
+  <style>
+    :root {
+      --text: #fff6e8;
+      --muted: #d4c1cc;
+      --line: rgba(255, 200, 120, 0.16);
+      --amber: #ffb347;
+      --amber-strong: #ff7b2f;
+      --pink: #ff4f9d;
+      --teal: #5cf2df;
+      --shadow: 0 28px 60px rgba(0, 0, 0, 0.4);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 16%, rgba(255, 79, 157, 0.18), transparent 22%),
+        radial-gradient(circle at 88% 8%, rgba(92, 242, 223, 0.14), transparent 18%),
+        linear-gradient(180deg, #160c1c 0%, #0e0a17 48%, #1a1020 100%);
+    }
+
+    .ambient {
+      position: fixed;
+      width: 30vw;
+      height: 30vw;
+      border-radius: 50%;
+      filter: blur(56px);
+      opacity: 0.28;
+      pointer-events: none;
+    }
+
+    .ambient-left {
+      top: -10vw;
+      left: -10vw;
+      background: rgba(255, 79, 157, 0.44);
+    }
+
+    .ambient-right {
+      right: -10vw;
+      bottom: -10vw;
+      background: rgba(92, 242, 223, 0.24);
+    }
+
+    .app-shell {
+      width: min(1120px, calc(100vw - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+      position: relative;
+    }
+
+    .hero-card,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+      gap: 1rem;
+      align-items: center;
+      padding: 2rem;
+      background:
+        radial-gradient(circle at top right, rgba(255,179,71,0.16), transparent 30%),
+        linear-gradient(135deg, rgba(44,17,54,0.95), rgba(20,10,31,0.96));
+    }
+
+    .panel {
+      margin-top: 1.1rem;
+      padding: 1.5rem;
+      background:
+        linear-gradient(180deg, rgba(27,11,37,0.96), rgba(20,9,29,0.94)),
+        rgba(33,16,42,0.82);
+    }
+
+    .eyebrow {
+      margin: 0 0 0.75rem;
+      color: var(--teal);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+    }
+
+    h1, h2 {
+      margin: 0;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      letter-spacing: 0.04em;
+    }
+
+    h1 {
+      font-size: clamp(3.4rem, 9vw, 6rem);
+      line-height: 0.9;
+      color: #ffd68d;
+    }
+
+    h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+    }
+
+    .lead,
+    .menu-card p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hero-illustration {
+      justify-self: end;
+      width: min(100%, 340px);
+    }
+
+    .bar-scene {
+      width: 100%;
+      height: auto;
+    }
+
+    .neon-halo {
+      fill: rgba(255, 79, 157, 0.14);
+      stroke: rgba(255, 79, 157, 0.7);
+      stroke-width: 3;
+    }
+
+    .bar-top { fill: #50301f; }
+    .bar-front { fill: #2b1714; }
+    .shot {
+      fill: rgba(255,255,255,0.08);
+      stroke: rgba(255,229,154,0.6);
+      stroke-width: 2;
+    }
+    .bus-body {
+      fill: #ffd267;
+      stroke: #2d1a08;
+      stroke-width: 3;
+    }
+    .bus-window { fill: rgba(92, 242, 223, 0.35); }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .menu-card {
+      padding: 1.15rem;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255, 179, 71, 0.12);
+    }
+
+    .mini-label {
+      display: block;
+      margin-bottom: 0.45rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .menu-link {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.95rem 1.35rem;
+      border-radius: 999px;
+      color: inherit;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--amber), var(--amber-strong));
+      color: #2b1307;
+    }
+
+    .accent {
+      background: linear-gradient(135deg, var(--pink), #ff965a);
+      color: #fff8f5;
+    }
+
+    @media (max-width: 900px) {
+      .hero-card,
+      .menu-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-illustration {
+        justify-self: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient ambient-left"></div>
+  <div class="ambient ambient-right"></div>
+
+  <main class="app-shell">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">Játékindító pult</p>
+        <h1>IVÓS JÁTÉKOK</h1>
+        <p class="lead">
+          A főmenü külön fájlba került. Innen tudsz átmenni a `Feleses`, a `Buszozás`
+          vagy a `Kings Cup` oldalra, mindegyik saját külön HTML-ben fut.
+        </p>
+      </div>
+      <div class="hero-illustration" aria-hidden="true">
+        <svg viewBox="0 0 320 260" class="bar-scene">
+          <circle cx="234" cy="70" r="42" class="neon-halo"/>
+          <rect x="0" y="210" width="320" height="18" rx="9" class="bar-top"/>
+          <rect x="0" y="228" width="320" height="32" class="bar-front"/>
+          <rect x="52" y="112" width="42" height="66" rx="10" class="shot"/>
+          <rect x="104" y="100" width="42" height="78" rx="10" class="shot"/>
+          <rect x="192" y="86" width="88" height="58" rx="12" class="bus-body"/>
+          <rect x="202" y="96" width="20" height="18" rx="5" class="bus-window"/>
+          <rect x="228" y="96" width="20" height="18" rx="5" class="bus-window"/>
+          <rect x="254" y="96" width="16" height="18" rx="5" class="bus-window"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="menu-grid">
+        <article class="menu-card">
+          <span class="mini-label">Véletlen riasztás</span>
+          <h2>Feleses</h2>
+          <p>Beállítod az időt, a rendszer pedig véletlenszerűen jelzi, mikor jön a következő kör.</p>
+          <a class="menu-link primary" href="feleses.html">Feleses megnyitása</a>
+        </article>
+
+        <article class="menu-card">
+          <span class="mini-label">Kártyás káosz</span>
+          <h2>Buszozás</h2>
+          <p>Az 5 kérdés, a piramis és a busz külön játékoldalon fut tovább.</p>
+          <a class="menu-link accent" href="buszozas.html">Buszozás megnyitása</a>
+        </article>
+
+        <article class="menu-card">
+          <span class="mini-label">Klasszikus húzós mód</span>
+          <h2>Kings Cup</h2>
+          <p>Véletlen lap húzása, azonnali szabálykiírással, királyszámlálóval és új paklival.</p>
+          <a class="menu-link secondary" href="kingscup.html">Kings Cup megnyitása</a>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

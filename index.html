@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ivós Játékok Multiplayer</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="ambient ambient-left"></div>
+  <div class="ambient ambient-right"></div>
+
+  <main class="app-shell">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">Multiplayer lobby</p>
+        <h1>IVÓS JÁTÉKOK</h1>
+        <p class="lead">Valós idejű multiplayer Kings Cup és Buszozás egy közös URL alatt, telefonra is optimalizálva.</p>
+      </div>
+      <div class="hero-illustration">
+        <div class="hero-badges">
+          <span class="hero-chip">Szobakód</span>
+          <span class="hero-chip">Mobilbarát</span>
+          <span class="hero-chip">Szinkronizált állapot</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="appRoot">
+      <div class="screen" id="lobbyScreen">
+        <div class="card">
+          <span class="mini-label">1. lépés</span>
+          <h2>Játék választása</h2>
+          <div class="choice-grid">
+            <button class="primary" data-create-room="kings">Új Kings Cup szoba</button>
+            <button class="accent" data-create-room="bus">Új Buszozás szoba</button>
+            <button class="good" id="openFelesesBtn">Feleses indítása háttérben</button>
+          </div>
+          <p class="helper">A Feleses külön fülön nyílik meg, így a multiplayer játék mellett a háttérben tud futni.</p>
+        </div>
+
+        <div class="card">
+          <span class="mini-label">2. lépés</span>
+          <h2>Csatlakozás meglévő szobához</h2>
+          <div class="join-row">
+            <input id="joinCodeInput" type="text" maxlength="6" placeholder="Szobakód">
+            <button id="joinRoomBtn" class="secondary">Csatlakozás</button>
+          </div>
+        </div>
+
+        <div class="card hidden" id="resumeRoomCard">
+          <span class="mini-label">Aktív játék</span>
+          <h2>Van futó szobád</h2>
+          <p class="helper" id="resumeRoomText">A szoba progressze megmaradt.</p>
+          <button id="resumeRoomBtn" class="primary">Vissza a szobába</button>
+        </div>
+
+        <div class="card">
+          <span class="mini-label">Saját eszköz</span>
+          <h2>Profilod ezen az eszközön</h2>
+          <div class="profile-form">
+            <input id="deviceNameInput" type="text" placeholder="Neved">
+            <input id="deviceAvatarInput" type="file" accept="image/*">
+            <div id="deviceAvatarPreview" class="avatar-preview"></div>
+          </div>
+          <p class="helper">A Buszozásnál ezt a nevet és képet fogjuk használni. Kings Cupnál külön névlista van a szobában.</p>
+        </div>
+      </div>
+
+      <div class="screen hidden" id="roomScreen">
+        <div class="room-topbar">
+          <div>
+            <span class="mini-label">Aktív szoba</span>
+            <h2 id="roomTitle">Szoba</h2>
+            <p class="helper" id="roomStatusText">Állapot</p>
+          </div>
+          <div class="room-topbar-actions">
+            <button id="backToMenuBtn" class="secondary">Vissza a menübe</button>
+            <button id="openFelesesRoomBtn" class="good">Feleses háttérben</button>
+            <div class="room-code-box">
+              <span class="mini-label">Szobakód</span>
+              <strong id="roomCodeText">------</strong>
+            </div>
+          </div>
+        </div>
+
+        <div id="roomContent"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop hidden" id="modalRoot">
+    <div class="modal-card">
+      <span class="mini-label" id="modalEyebrow">Üzenet</span>
+      <h3 id="modalTitle">Cím</h3>
+      <p class="helper" id="modalText">Szöveg</p>
+      <div class="modal-actions">
+        <button id="modalCancelBtn" class="secondary hidden">Mégse</button>
+        <button id="modalConfirmBtn" class="primary">Rendben</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
