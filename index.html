@@ -33,6 +33,7 @@
           <h2>Játék választása</h2>
           <div class="choice-grid">
             <button class="primary" data-create-room="kings">Új Kings Cup szoba</button>
+            <button class="secondary" data-create-room="kings_solo">Kings Cup singleplayer</button>
             <button class="accent" data-create-room="bus">Új Buszozás szoba</button>
             <button class="good" id="openFelesesBtn">Feleses indítása háttérben</button>
           </div>
@@ -76,6 +77,7 @@
           </div>
           <div class="room-topbar-actions">
             <button id="backToMenuBtn" class="secondary">Vissza a menübe</button>
+            <button id="leaveRoomBtn" class="danger">Kilépés</button>
             <button id="openFelesesRoomBtn" class="good">Feleses háttérben</button>
             <div class="room-code-box">
               <span class="mini-label">Szobakód</span>
@@ -97,6 +99,17 @@
       <div class="modal-actions">
         <button id="modalCancelBtn" class="secondary hidden">Mégse</button>
         <button id="modalConfirmBtn" class="primary">Rendben</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="managerRoot">
+    <div class="modal-card manager-card">
+      <span class="mini-label" id="managerEyebrow">Játékosok</span>
+      <h3 id="managerTitle">Játékoskezelés</h3>
+      <div id="managerBody"></div>
+      <div class="modal-actions">
+        <button id="managerCloseBtn" class="secondary">Bezárás</button>
       </div>
     </div>
   </div>

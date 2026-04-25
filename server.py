@@ -1,9 +1,9 @@
 import json
-import logging
 import random
 import string
 import threading
 import time
+import traceback
 from copy import deepcopy
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
@@ -16,9 +16,6 @@ PORT = 8000
 
 ROOMS = {}
 ROOM_LOCK = threading.Lock()
-ROOM_MAX_AGE_SECONDS = 12 * 60 * 60  # 12 hours
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 SUITS = [
     {"symbol": "♠", "color": "black", "name": "Pikk"},
@@ -87,6 +84,12 @@ def make_deck(deck_count):
     return deck
 
 
+def shuffled(deck):
+    result = list(deck)
+    random.shuffle(result)
+    return result
+
+
 def recommended_decks(player_count):
     if player_count <= 4:
         return 1
@@ -105,6 +108,9 @@ def ensure_room_exists(room_code):
 
 
 def create_room(game, client_id):
+    solo_mode = game == "kings_solo"
+    if game == "kings_solo":
+        game = "kings"
     code = make_room_code()
     while code in ROOMS:
         code = make_room_code()
@@ -127,6 +133,8 @@ def create_room(game, client_id):
             "deck": [],
             "discard": [],
             "last_card": None,
+            "kings_drawn": 0,
+            "solo_mode": solo_mode,
             "status": "Adj hozzá játékosokat, aztán indítsd el a játékot.",
         }
     elif game == "bus":
@@ -157,6 +165,21 @@ def touch(room):
     room["updated_at"] = now_ts()
 
 
+def ensure_host_exists(room):
+    client_ids = set()
+    if room["game"] == "bus":
+        client_ids.update(player["client_id"] for player in room["state"]["players"])
+    else:
+        client_ids.update(player.get("client_id") for player in room["state"]["players"] if player.get("client_id"))
+    if room["host_id"] in client_ids:
+        return
+    if client_ids:
+        room["host_id"] = next(iter(client_ids))
+        return
+    if room["watchers"]:
+        room["host_id"] = next(iter(room["watchers"].keys()))
+
+
 def sort_bus_players(room):
     room["state"]["players"].sort(key=lambda player: player["joined_at"])
 
@@ -174,6 +197,13 @@ def push_notification(player, title, text):
 def get_bus_player(room, client_id):
     for player in room["state"]["players"]:
         if player["client_id"] == client_id:
+            return player
+    return None
+
+
+def get_kings_player(room, client_id):
+    for player in room["state"]["players"]:
+        if player.get("client_id") == client_id:
             return player
     return None
 
@@ -208,6 +238,22 @@ def add_or_update_bus_player(room, client_id, name, avatar):
     return player
 
 
+def add_or_update_kings_player(room, client_id, name):
+    player = get_kings_player(room, client_id)
+    if player:
+        player["name"] = name or player["name"]
+        return player
+
+    player = {
+        "id": make_id("kp"),
+        "client_id": client_id,
+        "name": name or "Játékos",
+        "joined_at": now_ts(),
+    }
+    room["state"]["players"].append(player)
+    return player
+
+
 def sanitize_room(room, client_id):
     base = {
         "code": room["code"],
@@ -231,6 +277,8 @@ def sanitize_room(room, client_id):
             "current_player_name": current_player_name,
             "deck_count": len(state["deck"]),
             "last_card": deepcopy(state["last_card"]),
+            "kings_drawn": state.get("kings_drawn", 0),
+            "solo_mode": state.get("solo_mode", False),
             "status": state["status"],
             "is_host": client_id == room["host_id"],
         }
@@ -314,6 +362,8 @@ def action_join_room(payload):
 
     if room["game"] == "bus":
         add_or_update_bus_player(room, client_id, payload.get("name"), payload.get("avatar"))
+    elif room["game"] == "kings":
+        add_or_update_kings_player(room, client_id, payload.get("name"))
     touch(room)
     return {"room": sanitize_room(room, client_id)}
 
@@ -324,6 +374,50 @@ def action_update_bus_profile(payload):
     if room["game"] != "bus":
         raise ValueError("Ez nem buszos szoba.")
     add_or_update_bus_player(room, client_id, payload.get("name"), payload.get("avatar"))
+    touch(room)
+    return {"room": sanitize_room(room, client_id)}
+
+
+def action_leave_room(payload):
+    room = ensure_room_exists(payload.get("room"))
+    client_id = payload.get("client_id")
+    leaver_name = None
+
+    if room["game"] == "bus":
+        player = get_bus_player(room, client_id)
+        if player:
+            leaver_name = player["name"]
+            state = room["state"]
+            leaving_id = player["id"]
+            state["bus_queue"] = [item for item in state["bus_queue"] if item != leaving_id]
+            if state.get("bus_state") and state["bus_state"].get("rider_id") == leaving_id:
+                state["active_bus_index"] = min(state["active_bus_index"], len(state["bus_queue"]))
+                if state["bus_queue"]:
+                    prepare_next_bus_rider(room)
+                else:
+                    state["phase"] = "finished"
+                    state["bus_state"] = None
+            room["state"]["players"] = [item for item in room["state"]["players"] if item["client_id"] != client_id]
+    else:
+        player = get_kings_player(room, client_id)
+        if player:
+            leaver_name = player["name"]
+            state = room["state"]
+            removed_index = next((index for index, item in enumerate(state["players"]) if item.get("client_id") == client_id), -1)
+            state["players"] = [item for item in state["players"] if item.get("client_id") != client_id]
+            if removed_index >= 0 and state["current_player_index"] is not None:
+                if not state["players"]:
+                    state["current_player_index"] = None
+                    state["started"] = False
+                elif removed_index < state["current_player_index"]:
+                    state["current_player_index"] -= 1
+                elif removed_index == state["current_player_index"]:
+                    state["current_player_index"] %= len(state["players"])
+
+    room["watchers"].pop(client_id, None)
+    ensure_host_exists(room)
+    if leaver_name:
+        room["state"]["status"] = f"{leaver_name} kilépett a játékból."
     touch(room)
     return {"room": sanitize_room(room, client_id)}
 
@@ -406,9 +500,9 @@ def action_choose_pyramid_refill(payload):
     fresh = make_deck(1)
     needed = max(0, 15 - len(state["deck"]))
     if mode == "full":
-        state["deck"] = shuffle(state["deck"] + fresh)
+        state["deck"] = shuffled(state["deck"] + fresh)
     else:
-        state["deck"] = shuffle(state["deck"] + fresh[:needed])
+        state["deck"] = shuffled(state["deck"] + fresh[:needed])
 
     maybe_prepare_pyramid(room)
     touch(room)
@@ -440,11 +534,11 @@ def evaluate_question(player, step, card, guess):
 def evaluate_question_v2(player, step, card, guess):
     if step == 0:
         correct = guess == card["color"]
-        return correct, "Eltaláltad, megúsztad." if correct else "Nem találtad el, iszol.", 0
+        return correct, "Eltaláltad, megúsztad. Ossz ki 1 kortyot." if correct else "Nem találtad el, iszol.", 1 if correct else 0
     if step == 1:
         first = player["hand"][0]
         correct = (guess == "higher" and card["value"] > first["value"]) or (guess == "lower" and card["value"] < first["value"])
-        return correct, "Jó tipp volt." if correct else "Rossz tipp, jön az ivás.", 0
+        return correct, "Jó tipp volt. Ossz ki 1 kortyot." if correct else "Rossz tipp, jön az ivás.", 1 if correct else 0
     if step == 2:
         a = player["hand"][0]["value"]
         b = player["hand"][1]["value"]
@@ -452,7 +546,7 @@ def evaluate_question_v2(player, step, card, guess):
         high = max(a, b)
         inside = a != b and low < card["value"] < high
         correct = guess == ("inside" if inside else "outside")
-        return correct, "Bent volt a jó válasz." if correct else "Ez most nem jött be, iszol.", 0
+        return correct, "Bent volt a jó válasz. Ossz ki 1 kortyot." if correct else "Ez most nem jött be, iszol.", 1 if correct else 0
     if step == 3:
         correct = guess == card["suit"]
         return correct, "Eltaláltad a színt. Ossz ki 4 kortyot." if correct else "Nem találtad el, igyál egy kortyot.", 4 if correct else 0
@@ -632,7 +726,7 @@ def ensure_cards_for_bus(room, count):
     state = room["state"]
     if len(state["deck"]) >= count:
         return
-    state["deck"] = shuffle(state["deck"] + make_deck(max(1, state["deck_count"])))
+    state["deck"] = shuffled(state["deck"] + make_deck(max(1, state["deck_count"])))
 
 
 def get_bus_rider_player(room):
@@ -777,8 +871,12 @@ def action_kings_add_player(payload):
     room = ensure_room_exists(payload.get("room"))
     if room["game"] != "kings":
         raise ValueError("Ez nem Kings Cup szoba.")
+    if payload.get("client_id") != room["host_id"]:
+        raise ValueError("A játékosokat csak a host kezelheti.")
+    if not room["state"].get("solo_mode"):
+        raise ValueError("Új játékosnevet kézzel csak singleplayer Kings Cupban adhatsz hozzá.")
     state = room["state"]
-    state["players"].append({"id": make_id("kp"), "name": payload.get("name") or "Játékos"})
+    state["players"].append({"id": make_id("kp"), "client_id": None, "name": payload.get("name") or "Játékos", "joined_at": now_ts()})
     state["status"] = "Játékos hozzáadva."
     touch(room)
     return {"room": sanitize_room(room, payload.get("client_id"))}
@@ -786,6 +884,8 @@ def action_kings_add_player(payload):
 
 def action_kings_update_player(payload):
     room = ensure_room_exists(payload.get("room"))
+    if payload.get("client_id") != room["host_id"]:
+        raise ValueError("A játékosokat csak a host kezelheti.")
     state = room["state"]
     player_id = payload.get("player_id")
     player = next((item for item in state["players"] if item["id"] == player_id), None)
@@ -798,6 +898,8 @@ def action_kings_update_player(payload):
 
 def action_kings_remove_player(payload):
     room = ensure_room_exists(payload.get("room"))
+    if payload.get("client_id") != room["host_id"]:
+        raise ValueError("A játékosokat csak a host kezelheti.")
     state = room["state"]
     player_id = payload.get("player_id")
     state["players"] = [item for item in state["players"] if item["id"] != player_id]
@@ -812,6 +914,8 @@ def action_kings_remove_player(payload):
 def action_kings_start(payload):
     room = ensure_room_exists(payload.get("room"))
     state = room["state"]
+    if payload.get("client_id") != room["host_id"]:
+        raise ValueError("A játékot csak a host indíthatja.")
     if len(state["players"]) < 2:
         raise ValueError("Legalább két játékos kell a Kings Cuphoz.")
     state["deck"] = make_deck(1)
@@ -819,6 +923,7 @@ def action_kings_start(payload):
     state["started"] = True
     state["phase"] = "active"
     state["current_player_index"] = random.randrange(len(state["players"]))
+    state["kings_drawn"] = 0
     current_name = state["players"][state["current_player_index"]]["name"]
     state["status"] = f"A kezdő játékos: {current_name}."
     state["last_card"] = None
@@ -835,8 +940,12 @@ def action_kings_draw(payload):
         state["deck"] = make_deck(1)
 
     current_player = state["players"][state["current_player_index"]]
+    if current_player.get("client_id") and current_player.get("client_id") != payload.get("client_id"):
+        raise ValueError("Most nem te következel.")
     card = state["deck"].pop()
     rule = KINGS_RULES[card["rank"]]
+    if card["rank"] == "K":
+        state["kings_drawn"] = min(4, state.get("kings_drawn", 0) + 1)
     state["last_card"] = {"card": card, "rule": rule, "player_name": current_player["name"]}
     state["status"] = f"{current_player['name']} húzott egy {card['rank']}{card['suit']} lapot."
     advance_kings_player(state)
@@ -857,9 +966,27 @@ def action_kings_skip(payload):
     return {"room": sanitize_room(room, payload.get("client_id"))}
 
 
+def action_kings_restart(payload):
+    room = ensure_room_exists(payload.get("room"))
+    if payload.get("client_id") != room["host_id"]:
+        raise ValueError("A játékot csak a host indíthatja újra.")
+    state = room["state"]
+    state["phase"] = "lobby"
+    state["started"] = False
+    state["current_player_index"] = None
+    state["deck"] = []
+    state["discard"] = []
+    state["last_card"] = None
+    state["kings_drawn"] = 0
+    state["status"] = "A játék újraindult. Lehet csatlakozni és újrakezdeni."
+    touch(room)
+    return {"room": sanitize_room(room, payload.get("client_id"))}
+
+
 ACTIONS = {
     "create_room": action_create_room,
     "join_room": action_join_room,
+    "leave_room": action_leave_room,
     "update_bus_profile": action_update_bus_profile,
     "set_bus_decks": action_set_bus_decks,
     "start_bus": action_start_bus,
@@ -876,9 +1003,15 @@ ACTIONS = {
     "kings_update_player": action_kings_update_player,
     "kings_remove_player": action_kings_remove_player,
     "kings_start": action_kings_start,
+    "kings_restart": action_kings_restart,
     "kings_draw": action_kings_draw,
     "kings_skip": action_kings_skip,
 }
+
+
+class StableThreadingHTTPServer(ThreadingHTTPServer):
+    daemon_threads = True
+    allow_reuse_address = True
 
 
 class AppHandler(SimpleHTTPRequestHandler):
@@ -886,10 +1019,7 @@ class AppHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(path)
         cleaned = parsed.path.lstrip("/") or "index.html"
         resolved = (ROOT / cleaned).resolve()
-        # Prevent path traversal: reject anything outside the app root
-        try:
-            resolved.relative_to(ROOT)
-        except ValueError:
+        if not resolved.is_relative_to(ROOT):
             return str(ROOT / "index.html")
         return str(resolved)
 
@@ -906,8 +1036,15 @@ class AppHandler(SimpleHTTPRequestHandler):
             self.send_error(404, "Ismeretlen API végpont.")
             return
 
-        length = int(self.headers.get("Content-Length", "0"))
-        data = json.loads(self.rfile.read(length) or b"{}")
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if length > 1_000_000:
+                self.send_json({"error": "Kérés túl nagy."}, status=413)
+                return
+            data = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_json({"error": "Hibás JSON kérés."}, status=400)
+            return
         action = data.get("action")
         handler = ACTIONS.get(action)
         if not handler:
@@ -922,8 +1059,8 @@ class AppHandler(SimpleHTTPRequestHandler):
             self.send_json({"error": str(exc)}, status=400)
             return
         except Exception as exc:
-            logging.exception("Unhandled error in action handler")
-            self.send_json({"error": "Belső szerverhiba történt."}, status=500)
+            traceback.print_exc()
+            self.send_json({"error": f"Belső hiba: {exc}"}, status=500)
             return
 
         self.send_json(response)
@@ -944,34 +1081,34 @@ class AppHandler(SimpleHTTPRequestHandler):
         except ValueError as exc:
             self.send_json({"error": str(exc)}, status=404)
             return
+        except Exception as exc:
+            traceback.print_exc()
+            self.send_json({"error": f"Belső hiba: {exc}"}, status=500)
+            return
 
         self.send_json(response)
 
     def send_json(self, payload, status=200):
         encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(encoded)))
-        self.end_headers()
-        self.wfile.write(encoded)
-
-
-def _cleanup_old_rooms():
-    """Background thread: delete rooms not updated in the last ROOM_MAX_AGE_SECONDS."""
-    while True:
-        time.sleep(60 * 30)  # run every 30 minutes
-        cutoff = int(time.time()) - ROOM_MAX_AGE_SECONDS
-        with ROOM_LOCK:
-            stale = [code for code, room in ROOMS.items() if room.get("updated_at", 0) < cutoff]
-            for code in stale:
-                del ROOMS[code]
-            if stale:
-                logging.info("Cleaned up %d stale room(s): %s", len(stale), stale)
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass
 
 
 if __name__ == "__main__":
-    cleaner = threading.Thread(target=_cleanup_old_rooms, daemon=True)
-    cleaner.start()
-    server = ThreadingHTTPServer((HOST, PORT), AppHandler)
-    logging.info("Multiplayer szerver fut: http://0.0.0.0:%d", PORT)
-    server.serve_forever()
+    server = StableThreadingHTTPServer((HOST, PORT), AppHandler)
+    print(f"Multiplayer szerver fut: http://127.0.0.1:{PORT}")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("Szerver leállítva.")
+    except Exception:
+        traceback.print_exc()
+        raise
+    finally:
+        server.server_close()
