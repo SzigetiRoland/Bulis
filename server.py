@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 import string
 import threading
@@ -15,6 +16,9 @@ PORT = 8000
 
 ROOMS = {}
 ROOM_LOCK = threading.Lock()
+ROOM_MAX_AGE_SECONDS = 12 * 60 * 60  # 12 hours
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 SUITS = [
     {"symbol": "♠", "color": "black", "name": "Pikk"},
@@ -881,7 +885,13 @@ class AppHandler(SimpleHTTPRequestHandler):
     def translate_path(self, path):
         parsed = urlparse(path)
         cleaned = parsed.path.lstrip("/") or "index.html"
-        return str((ROOT / cleaned).resolve())
+        resolved = (ROOT / cleaned).resolve()
+        # Prevent path traversal: reject anything outside the app root
+        try:
+            resolved.relative_to(ROOT)
+        except ValueError:
+            return str(ROOT / "index.html")
+        return str(resolved)
 
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -912,7 +922,8 @@ class AppHandler(SimpleHTTPRequestHandler):
             self.send_json({"error": str(exc)}, status=400)
             return
         except Exception as exc:
-            self.send_json({"error": f"Belső hiba: {exc}"}, status=500)
+            logging.exception("Unhandled error in action handler")
+            self.send_json({"error": "Belső szerverhiba történt."}, status=500)
             return
 
         self.send_json(response)
@@ -945,7 +956,22 @@ class AppHandler(SimpleHTTPRequestHandler):
         self.wfile.write(encoded)
 
 
+def _cleanup_old_rooms():
+    """Background thread: delete rooms not updated in the last ROOM_MAX_AGE_SECONDS."""
+    while True:
+        time.sleep(60 * 30)  # run every 30 minutes
+        cutoff = int(time.time()) - ROOM_MAX_AGE_SECONDS
+        with ROOM_LOCK:
+            stale = [code for code, room in ROOMS.items() if room.get("updated_at", 0) < cutoff]
+            for code in stale:
+                del ROOMS[code]
+            if stale:
+                logging.info("Cleaned up %d stale room(s): %s", len(stale), stale)
+
+
 if __name__ == "__main__":
+    cleaner = threading.Thread(target=_cleanup_old_rooms, daemon=True)
+    cleaner.start()
     server = ThreadingHTTPServer((HOST, PORT), AppHandler)
-    print(f"Multiplayer szerver fut: http://127.0.0.1:{PORT}")
+    logging.info("Multiplayer szerver fut: http://0.0.0.0:%d", PORT)
     server.serve_forever()

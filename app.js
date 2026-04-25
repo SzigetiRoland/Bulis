@@ -47,7 +47,8 @@
   };
 
   function setAvatarPreview(el, avatar) {
-    el.style.backgroundImage = avatar ? `url(${avatar})` : "";
+    const safe = avatar ? sanitizeAvatarUrl(avatar) : "";
+    el.style.backgroundImage = safe ? `url(${safe})` : "";
   }
 
   function openFelesesWindow() {
@@ -227,7 +228,19 @@
   }
 
   function renderPlayerAvatar(avatar, fallback) {
-    return `<div class="avatar-small" style="${avatar ? `background-image:url(${avatar})` : ""}"></div><div><strong>${escapeHtml(fallback)}</strong></div>`;
+    const safeAvatar = avatar ? sanitizeAvatarUrl(avatar) : "";
+    return `<div class="avatar-small" style="${safeAvatar ? `background-image:url(${safeAvatar})` : ""}"></div><div><strong>${escapeHtml(fallback)}</strong></div>`;
+  }
+
+  function sanitizeAvatarUrl(url) {
+    try {
+      const parsed = new URL(url, window.location.href);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:" && parsed.protocol !== "data:") return "";
+      // Strip anything that could break out of url("...")
+      return url.replace(/["'()\\]/g, "");
+    } catch {
+      return "";
+    }
   }
 
   function escapeHtml(value) {
